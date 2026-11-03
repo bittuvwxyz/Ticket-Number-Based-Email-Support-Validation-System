@@ -97,12 +97,31 @@ $systemReady = $phpOk && $allExtsOk && ($dbStatus['status'] === 'success') && ($
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
-                        <i class="bi bi-exclamation-circle-fill fs-3 me-3 text-warning"></i>
-                        <div>
-                            <h5 class="alert-heading mb-1 fw-bold">System Attention Required</h5>
-                            <p class="mb-0 text-secondary">One or more requirements need resolution before proceeding to Phase 2.</p>
+                    <div class="alert alert-warning shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-circle-fill fs-3 me-3 text-warning"></i>
+                            <div>
+                                <h5 class="alert-heading mb-1 fw-bold">System Attention Required</h5>
+                                <p class="mb-0 text-secondary">
+                                    <?php if (!$extensions['imap']): ?>
+                                        The <strong>IMAP extension</strong> is enabled in <code>php.ini</code>, but <strong>Apache must be restarted</strong> to load it into memory.
+                                    <?php else: ?>
+                                        One or more requirements need resolution before proceeding to Phase 2.
+                                    <?php endif; ?>
+                                </p>
+                            </div>
                         </div>
+                        <?php if (!$extensions['imap']): ?>
+                            <hr class="my-3">
+                            <div class="bg-white p-3 rounded border border-warning">
+                                <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-arrow-repeat text-primary me-2"></i>Quick 2-Step Fix:</h6>
+                                <ol class="mb-0 ps-3 text-secondary">
+                                    <li>In the <strong>XAMPP Control Panel</strong>, click <strong class="text-danger">Stop</strong> next to <strong>Apache</strong>.</li>
+                                    <li>Wait 2 seconds, then click <strong class="text-success">Start</strong> next to <strong>Apache</strong>.</li>
+                                    <li>Refresh this browser page (<code>F5</code>).</li>
+                                </ol>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
