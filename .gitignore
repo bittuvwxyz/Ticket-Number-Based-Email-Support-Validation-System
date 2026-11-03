@@ -1,0 +1,28 @@
+# Environment & Secret Configuration
+helpdesk-private/.env
+.env
+
+# Application Storage & Attachments
+helpdesk-private/storage/attachments/*
+!helpdesk-private/storage/attachments/.gitkeep
+!helpdesk-private/storage/attachments/.htaccess
+
+# Database Backups & Dumps
+helpdesk-private/storage/backups/*
+!helpdesk-private/storage/backups/.gitkeep
+
+# Application Logs
+helpdesk-private/logs/*
+!helpdesk-private/logs/.gitkeep
+!helpdesk-private/logs/.htaccess
+*.log
+
+# Composer Dependencies
+vendor/
+helpdesk-private/vendor/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

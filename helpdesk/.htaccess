@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------
+# Public Web Directory Security & Routing (.htaccess)
+# Compatible with Apache on shared cPanel hosting and local Apache
+# -----------------------------------------------------------------------------
+
+# Disable directory browsing
+Options -Indexes
+
+# Follow symbolic links
+Options +FollowSymLinks
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Block access to hidden files and sensitive file extensions
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|log|ini|sh|bak|env)$">
+    Require all denied
+</FilesMatch>
+
+# Charset
+AddDefaultCharset UTF-8
