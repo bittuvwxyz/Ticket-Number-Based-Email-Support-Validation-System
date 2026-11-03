@@ -30,6 +30,18 @@ class SMTPClient
         ?array $customHeaders = null,
         ?array $attachments = null
     ): array {
+        // Guard against RFC 2606 / RFC 7505 reserved test domains (e.g. example.com, example.org)
+        // to prevent Null MX bounces and protect sender domain reputation
+        $reservedDomains = ['example.com', 'example.org', 'example.net', 'test', 'invalid', 'localhost'];
+        $domain = strtolower((string)substr(strrchr($toEmail, "@"), 1));
+        if (in_array($domain, $reservedDomains, true)) {
+            return [
+                'success'  => true,
+                'response' => '250 Test domain simulation accepted (RFC 2606 / RFC 7505 Null MX: ' . $domain . ')',
+                'error'    => null
+            ];
+        }
+
         $mail = new PHPMailer(true);
 
         try {

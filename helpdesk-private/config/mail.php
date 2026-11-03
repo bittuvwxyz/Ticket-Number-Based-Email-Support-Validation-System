@@ -23,9 +23,9 @@ return [
         'from_name'  => $_ENV['MAIL_FROM_NAME'] ?? 'Support Desk',
     ],
     'reply_routing' => [
-        'domain'             => $_ENV['MAIL_REPLY_DOMAIN'] ?? 'example.com',
+        'domain'             => $_ENV['MAIL_REPLY_DOMAIN'] ?? 'gmail.com',
         'prefix'             => $_ENV['MAIL_REPLY_PREFIX'] ?? 'reply+',
         'token_expiry_days'  => (int)($_ENV['MAIL_TOKEN_EXPIRY_DAYS'] ?? 14),
-        'token_length_bytes' => (int)($_ENV['MAIL_TOKEN_LENGTH_BYTES'] ?? 32),
+        'token_length_bytes' => (int)($_ENV['MAIL_TOKEN_LENGTH_BYTES'] ?? 16),
     ]
 ];

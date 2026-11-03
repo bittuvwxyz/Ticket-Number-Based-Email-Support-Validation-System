@@ -235,6 +235,8 @@ echo "============================================================\n";
 Database::query("DELETE FROM `tickets` WHERE `id` = :id", ['id' => $ticketId]);
 Database::query("DELETE FROM `users` WHERE `id` = :id", ['id' => $testUser['id']]);
 Database::query("DELETE FROM `login_logs` WHERE `email` = :email", ['email' => $testEmail]);
+Database::query("DELETE FROM `email_queue` WHERE `recipient_email` = :email", ['email' => $testEmail]);
+Database::query("DELETE FROM `email_logs` WHERE `recipient_email` = :email", ['email' => $testEmail]);
 
 if ($failed > 0) {
     exit(1);

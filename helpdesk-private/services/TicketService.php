@@ -111,8 +111,9 @@ class TicketService
             ]);
             $ticketId = (int)$pdo->lastInsertId();
 
-            // 2. Generate cryptographically secure reply token (32 random bytes -> 64 hex characters)
-            $rawToken = bin2hex(random_bytes(32));
+            // 2. Generate cryptographically secure reply token (RFC 5321 compliant local-part length <= 64)
+            $tokenBytes = (int)config('mail.reply_routing.token_length_bytes', 16);
+            $rawToken = bin2hex(random_bytes($tokenBytes));
             $tokenHash = hash('sha256', $rawToken);
             $tokenPrefix = substr($rawToken, 0, 8);
             $expiryDays = (int)config('mail.reply_routing.token_expiry_days', 14);
