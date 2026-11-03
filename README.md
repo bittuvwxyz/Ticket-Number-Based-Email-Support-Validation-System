@@ -175,7 +175,7 @@ Location: `helpdesk-private/services/EmailValidationService.php`
 
 | Function | Signature | Description |
 | :--- | :--- | :--- |
-| `extractTokenFromAddress()` | `EmailValidationService::extractTokenFromAddress(string $toAddress): ?string` | Extracts hexadecimal token from plus-addressed address (e.g. `mail+{token}@websitesting.shop`). |
+| `extractTokenFromAddress()` | `EmailValidationService::extractTokenFromAddress(string $toAddress): ?string` | Extracts hexadecimal token from plus-addressed address (e.g. `reply+{token}@websitesting.shop`). |
 | `extractTicketNumberFromSubject()` | `EmailValidationService::extractTicketNumberFromSubject(string $subject): ?string` | Extracts tracking ticket number (e.g. `REQ-2026-10001`) from email Subject line via regex. |
 | `validateInboundMessage()` | `EmailValidationService::validateInboundMessage(array $message): array` | Core validation pipeline checking token validity, token revocation, token expiration, authorized sender list, ticket status (rejects closed if policy forbids), blocked addresses, and duplicate `Message-ID`. |
 
@@ -243,7 +243,7 @@ MAIL_FROM_NAME="Support Desk"
 
 # Reply Routing Domain
 MAIL_REPLY_DOMAIN="websitesting.shop"
-MAIL_REPLY_PREFIX="mail+"
+MAIL_REPLY_PREFIX="reply+"
 ```
 
 ### 3. Run Database Migrations

@@ -3,7 +3,7 @@
  * Phase 3 Automated Integration Test Suite
  * 
  * Verifies:
- * - Token extraction from plus-addressed email (mail+token@websitesting.shop)
+ * - Token extraction from plus-addressed email (reply+token@websitesting.shop)
  * - Ticket number extraction from subject line ([REQ-YYYY-XXXXX])
  * - Validation engine cases:
  *     1. Valid ticket + valid token + authorized sender -> Accepted
@@ -48,7 +48,7 @@ function assertTest(string $description, bool $condition, ?string $detail = null
 // Test 1: Address and Subject Extractions
 // -------------------------------------------------------------
 echo "Test 1: Address & Subject Parsing\n";
-$replyPrefix = config('mail.reply_routing.prefix', 'mail+');
+$replyPrefix = config('mail.reply_routing.prefix', 'reply+');
 $replyDomain = config('mail.reply_routing.domain', 'websitesting.shop');
 
 $dummyToken = "3c712dfd1393ca13fdbb17b26ac2eef3";

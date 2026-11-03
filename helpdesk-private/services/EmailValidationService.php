@@ -27,7 +27,7 @@ class EmailValidationService
 
     /**
      * Extracts token from recipient email address.
-     * Example: mail+3c712dfd1393ca13fdbb17b26ac2eef3@websitesting.shop -> 3c712dfd1393ca13fdbb17b26ac2eef3
+     * Example: reply+3c712dfd1393ca13fdbb17b26ac2eef3@websitesting.shop -> 3c712dfd1393ca13fdbb17b26ac2eef3
      */
     public static function extractTokenFromAddress(string $toAddress): ?string
     {
