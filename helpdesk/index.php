@@ -89,11 +89,21 @@ $systemReady = $phpOk && $allExtsOk && ($dbStatus['status'] === 'success') && ($
 
                 <!-- Overall Status Alert -->
                 <?php if ($systemReady): ?>
-                    <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
-                        <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
-                        <div>
-                            <h5 class="alert-heading mb-1 fw-bold">Phase 1 Environment & Database Operational</h5>
-                            <p class="mb-0 text-secondary">All required PHP extensions, MySQL tables, foreign keys, transaction managers, and permissions are verified and ready for Phase 2 (Authentication & Ticket Creation).</p>
+                    <div class="alert alert-success d-flex flex-column flex-md-row justify-content-between align-items-md-center shadow-sm p-4" role="alert">
+                        <div class="d-flex align-items-center mb-3 mb-md-0">
+                            <i class="bi bi-check-circle-fill fs-2 me-3 text-success"></i>
+                            <div>
+                                <h5 class="alert-heading mb-1 fw-bold">System Fully Operational & Ready</h5>
+                                <p class="mb-0 text-secondary">All PHP extensions, MariaDB tables, token validation, and email systems are online.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="login.php" class="btn btn-primary px-3 fw-semibold">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                            </a>
+                            <a href="register.php" class="btn btn-outline-primary px-3 fw-semibold">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
                         </div>
                     </div>
                 <?php else: ?>

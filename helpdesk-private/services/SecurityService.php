@@ -47,7 +47,11 @@ class SecurityService
     public static function generateCsrfToken(): string
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
+            if (!headers_sent()) {
+                session_start();
+            } else {
+                @session_start();
+            }
         }
 
         if (empty($_SESSION['csrf_token']) || empty($_SESSION['csrf_token_time']) || (time() - $_SESSION['csrf_token_time'] > 7200)) {
@@ -64,7 +68,11 @@ class SecurityService
     public static function validateCsrfToken(?string $token): bool
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
+            if (!headers_sent()) {
+                session_start();
+            } else {
+                @session_start();
+            }
         }
 
         if (empty($token) || empty($_SESSION['csrf_token'])) {

@@ -77,6 +77,9 @@ class EmailValidationService
         $subject = trim($emailData['subject'] ?? '');
         $messageId = trim($emailData['message_id_header'] ?? '');
         $token = self::extractTokenFromAddress($toEmail);
+        if (!$token && !empty($emailData['raw_headers'])) {
+            $token = self::extractTokenFromAddress($emailData['raw_headers']);
+        }
         $ticketNumber = self::extractTicketNumberFromSubject($subject);
 
         // 1. Check for blocked/spam senders

@@ -90,6 +90,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle ticket status change by authorized user / staff
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    $submittedCsrf = $_POST['csrf_token'] ?? '';
+    if (!SecurityService::validateCsrfToken($submittedCsrf)) {
+        $error = "Session validation failed. Please try again.";
+    } else {
+        $newStatus = trim($_POST['status'] ?? '');
+        $allowedStatuses = ['open', 'pending', 'closed', 'reopened'];
+        if (in_array($newStatus, $allowedStatuses, true)) {
+            $oldStatus = $ticket['status'];
+            if ($newStatus !== $oldStatus) {
+                Database::query(
+                    "UPDATE `tickets` SET `status` = :status, `updated_at` = NOW() WHERE `id` = :id",
+                    ['status' => $newStatus, 'id' => $ticketId]
+                );
+                Database::query(
+                    "INSERT INTO `ticket_status_history` (`ticket_id`, `old_status`, `new_status`, `changed_by`, `reason`, `created_at`) 
+                     VALUES (:ticket_id, :old, :new, :by, :reason, NOW())",
+                    [
+                        'ticket_id' => $ticketId,
+                        'old'       => $oldStatus,
+                        'new'       => $newStatus,
+                        'by'        => $userId,
+                        'reason'    => "Status changed to " . ucfirst($newStatus) . " by {$user['first_name']} {$user['last_name']}"
+                    ]
+                );
+                $_SESSION['flash_success'] = "Ticket status updated to " . ucfirst($newStatus) . ".";
+                header("Location: ticket-view.php?id={$ticketId}");
+                exit;
+            }
+        }
+    }
+}
+
 $messages = TicketService::getTicketMessages($ticketId, $isStaff);
 $pageTitle = "Ticket " . $ticket['ticket_number'];
 require_once __DIR__ . '/includes/header.php';
@@ -248,6 +282,33 @@ $csrfToken = SecurityService::generateCsrfToken();
                         <span><?= date('M d, Y H:i', strtotime($ticket['updated_at'])) ?></span>
                     </li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- Status Management Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 fw-bold border-bottom">
+                <i class="bi bi-toggles text-primary me-2"></i>Status Management
+            </div>
+            <div class="card-body">
+                <form method="POST" action="ticket-view.php?id=<?= $ticketId ?>">
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Change Status</label>
+                        <select name="status" class="form-select form-select-sm" required>
+                            <option value="open" <?= $ticket['status'] === 'open' ? 'selected' : '' ?>>Open</option>
+                            <option value="pending" <?= $ticket['status'] === 'pending' ? 'selected' : '' ?>>Pending Customer</option>
+                            <option value="closed" <?= $ticket['status'] === 'closed' ? 'selected' : '' ?>>Closed / Resolved</option>
+                            <option value="reopened" <?= $ticket['status'] === 'reopened' ? 'selected' : '' ?>>Reopened</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i> Update Status
+                    </button>
+                </form>
             </div>
         </div>
 

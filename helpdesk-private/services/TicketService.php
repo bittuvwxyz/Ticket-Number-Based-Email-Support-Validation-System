@@ -52,7 +52,7 @@ class TicketService
      */
     public static function generateReplyAddress(string $rawToken): string
     {
-        $domain = config('mail.reply_routing.domain', 'example.com');
+        $domain = config('mail.reply_routing.domain', 'websitesting.shop');
         $prefix = config('mail.reply_routing.prefix', 'reply+');
         return "{$prefix}{$rawToken}@{$domain}";
     }

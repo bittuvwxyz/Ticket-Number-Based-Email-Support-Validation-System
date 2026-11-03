@@ -75,7 +75,7 @@ $csrfToken = SecurityService::generateCsrfToken();
 
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Email Address</label>
-                        <input type="email" name="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="name@example.com" autofocus>
+                        <input type="email" name="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="mail@websitesting.shop" autofocus>
                     </div>
 
                     <div class="mb-3">

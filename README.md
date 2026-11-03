@@ -62,6 +62,7 @@ To protect database credentials, configuration files, logs, and attachments on s
 │       ├── phase1_test.php            <-- Phase 1 DB & connection test suite
 │       ├── phase2_test.php            <-- Phase 2 Auth & ticket creation test suite
 │       ├── phase3_test.php            <-- Phase 3 Token & validation test suite
+│       ├── full_system_test.php       <-- Master Full System end-to-end test suite (55 tests)
 │       └── test_email_credentials.php <-- Live SMTP & IMAP socket credential tester
 └── helpdesk/                          <-- Public web root (public_html/helpdesk)
     ├── .htaccess                      <-- Security headers, disabled directory indexing
@@ -285,7 +286,14 @@ php helpdesk-private/tests/phase3_test.php
 ```
 *Expected Result: `15 Passed, 0 Failed`*
 
-### 4. Test Live Email Credentials (SMTP & IMAP)
+### 4. Run Master Full System Test Suite (All Components E2E)
+Validates all 9 layers of the architecture (environment, security, auth lifecycle, ticket cryptography, status transitions, inbound validation, MIME stripping, outbound queuing, and frontend endpoint structure):
+```bash
+php helpdesk-private/tests/full_system_test.php
+```
+*Expected Result: `55 Passed, 0 Failed`*
+
+### 5. Test Live Email Credentials (SMTP & IMAP)
 Tests real socket connections against mail servers to verify authentication:
 ```bash
 php helpdesk-private/tests/test_email_credentials.php

@@ -166,10 +166,11 @@ class MailQueueService
             <p style='color: #888; font-size: 12px;'>{$appName} - Automated Notification System</p>
         </div>";
 
+        $replyDomain = config('mail.reply_routing.domain', 'websitesting.shop');
         $customHeaders = [
             'X-Ticket-ID' => $ticketNum,
-            'In-Reply-To' => "<ticket-{$ticket['id']}@" . config('mail.reply_routing.domain') . ">",
-            'References'  => "<ticket-{$ticket['id']}@" . config('mail.reply_routing.domain') . ">",
+            'In-Reply-To' => "<ticket-{$ticket['id']}@{$replyDomain}>",
+            'References'  => "<ticket-{$ticket['id']}@{$replyDomain}>",
         ];
 
         return self::enqueue(

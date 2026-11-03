@@ -44,7 +44,7 @@ function assertTest(string $description, bool $condition, ?string $detail = null
 }
 
 // Clean up any test users from previous runs
-$testEmail = 'john.doe.test@example.com';
+$testEmail = 'john.doe.test@websitesting.shop';
 Database::query("DELETE FROM `users` WHERE `email` = :email", ['email' => $testEmail]);
 Database::query("DELETE FROM `login_logs` WHERE `email` = :email", ['email' => $testEmail]);
 
@@ -94,7 +94,7 @@ assertTest("Verification token cleared after redemption", empty($verifiedUser['v
 // Test 4: Brute-Force Rate Limiting
 // -----------------------------------------------------------------------------
 echo "\nTest 4: Brute-Force Defense & Login Logs\n";
-$dummyEmail = 'attacker@example.com';
+$dummyEmail = 'attacker.test@websitesting.shop';
 $dummyIp = '203.0.113.199'; // Test IP address
 
 for ($i = 1; $i <= 5; $i++) {

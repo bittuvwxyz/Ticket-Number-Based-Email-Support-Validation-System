@@ -102,12 +102,12 @@ assertTest("System settings populated (> 5 entries)", $settingsCount >= 5, "Coun
 echo "\nTest 5: Transaction Rollback Integrity\n";
 try {
     Database::beginTransaction();
-    Database::execute("INSERT INTO `blocked_emails` (`pattern`, `reason`) VALUES ('test_rollback@example.com', 'Testing rollback')");
-    $existsInTx = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_rollback@example.com'");
+    Database::execute("INSERT INTO `blocked_emails` (`pattern`, `reason`) VALUES ('test_rollback@websitesting.shop', 'Testing rollback')");
+    $existsInTx = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_rollback@websitesting.shop'");
     assertTest("Record inserted inside active transaction", $existsInTx !== null);
 
     Database::rollBack();
-    $existsAfterRollback = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_rollback@example.com'");
+    $existsAfterRollback = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_rollback@websitesting.shop'");
     assertTest("Record eliminated after rollback", $existsAfterRollback === null);
 } catch (Throwable $e) {
     assertTest("Transaction rollback failed", false, $e->getMessage());
@@ -117,13 +117,13 @@ try {
 echo "\nTest 6: Transaction Commit Integrity\n";
 try {
     Database::transaction(function () {
-        Database::execute("INSERT INTO `blocked_emails` (`pattern`, `reason`) VALUES ('test_commit@example.com', 'Testing commit')");
+        Database::execute("INSERT INTO `blocked_emails` (`pattern`, `reason`) VALUES ('test_commit@websitesting.shop', 'Testing commit')");
     });
-    $existsAfterCommit = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_commit@example.com'");
+    $existsAfterCommit = Database::fetchOne("SELECT * FROM `blocked_emails` WHERE `pattern` = 'test_commit@websitesting.shop'");
     assertTest("Record persisted after committed transaction", $existsAfterCommit !== null);
 
     // Clean up test record
-    Database::execute("DELETE FROM `blocked_emails` WHERE `pattern` = 'test_commit@example.com'");
+    Database::execute("DELETE FROM `blocked_emails` WHERE `pattern` = 'test_commit@websitesting.shop'");
 } catch (Throwable $e) {
     assertTest("Transaction commit failed", false, $e->getMessage());
 }

@@ -66,7 +66,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="<?= $appUrl ?>/dashboard.php">
+        <a class="navbar-brand d-flex align-items-center" href="<?= $currentUser ? "{$appUrl}/dashboard.php" : "{$appUrl}/login.php" ?>">
             <i class="bi bi-shield-check text-primary fs-4 me-2"></i>
             <span><?= htmlspecialchars($appName) ?></span>
         </a>

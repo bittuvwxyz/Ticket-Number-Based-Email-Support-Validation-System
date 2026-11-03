@@ -65,7 +65,7 @@ assertTest("Ticket number extracted accurately from subject", $extractedTicketNu
 // -------------------------------------------------------------
 echo "\nTest 2: Reply Quote Stripper\n";
 $emailBodyWithQuotes = "I have uploaded the new SSL certificate as requested.\n\n"
-                     . "On Tue, Nov 3, 2026 at 10:15 AM Support Desk <support@example.com> wrote:\n"
+                     . "On Tue, Nov 3, 2026 at 10:15 AM Support Desk <mail@websitesting.shop> wrote:\n"
                      . "> Hello customer,\n"
                      . "> Please provide your certificate file.\n"
                      . "> Regards,\n> Support";
@@ -77,7 +77,7 @@ assertTest("Fresh message text preserved", str_contains($cleanBody, "I have uplo
 // -------------------------------------------------------------
 // Setup Test Ticket and Token
 // -------------------------------------------------------------
-$testUserEmail = 'token.tester@example.com';
+$testUserEmail = 'token.tester@websitesting.shop';
 Database::query("DELETE FROM `users` WHERE `email` = :email", ['email' => $testUserEmail]);
 Database::query(
     "INSERT INTO `users` (`role`, `email`, `password_hash`, `first_name`, `last_name`, `is_verified`, `status`) 
@@ -101,7 +101,7 @@ $validEmail = [
     'from_email'        => $testUserEmail,
     'to_email'          => "{$replyPrefix}{$activeRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
-    'message_id_header' => '<msg-valid-001@mail.example.com>',
+    'message_id_header' => '<msg-valid-001@websitesting.shop>',
     'body_plain'        => 'Here is my reply to the ticket.'
 ];
 
@@ -117,7 +117,7 @@ $missingEmail = [
     'from_email'        => $testUserEmail,
     'to_email'          => config('mail.from.address', 'mail@websitesting.shop'),
     'subject'           => "Just a random question with no ticket number",
-    'message_id_header' => '<msg-missing-002@mail.example.com>',
+    'message_id_header' => '<msg-missing-002@websitesting.shop>',
     'body_plain'        => 'Random body.'
 ];
 
@@ -132,7 +132,7 @@ $invalidTokenEmail = [
     'from_email'        => $testUserEmail,
     'to_email'          => "{$replyPrefix}deadbeefdeadbeefdeadbeefdeadbeef@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
-    'message_id_header' => '<msg-inv-003@mail.example.com>',
+    'message_id_header' => '<msg-inv-003@websitesting.shop>',
     'body_plain'        => 'Random body.'
 ];
 
@@ -147,7 +147,7 @@ $unauthEmail = [
     'from_email'        => 'stranger@imposter.com',
     'to_email'          => "{$replyPrefix}{$activeRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
-    'message_id_header' => '<msg-unauth-004@mail.example.com>',
+    'message_id_header' => '<msg-unauth-004@websitesting.shop>',
     'body_plain'        => 'Attempting to inject a reply.'
 ];
 
@@ -176,7 +176,7 @@ $expiredEmail = [
     'from_email'        => $testUserEmail,
     'to_email'          => "{$replyPrefix}{$expiredRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
-    'message_id_header' => '<msg-exp-005@mail.example.com>',
+    'message_id_header' => '<msg-exp-005@websitesting.shop>',
     'body_plain'        => 'Reply using expired token.'
 ];
 
@@ -205,7 +205,7 @@ $revokedEmail = [
     'from_email'        => $testUserEmail,
     'to_email'          => "{$replyPrefix}{$revokedRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
-    'message_id_header' => '<msg-rev-006@mail.example.com>',
+    'message_id_header' => '<msg-rev-006@websitesting.shop>',
     'body_plain'        => 'Reply using revoked token.'
 ];
 

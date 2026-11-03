@@ -75,7 +75,7 @@ $csrfToken = SecurityService::generateCsrfToken();
 
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Email Address <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="name@example.com">
+                        <input type="email" name="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="customer@websitesting.shop">
                         <div class="form-text small">Your email will be used for tokenized ticket reply authorization.</div>
                     </div>
 

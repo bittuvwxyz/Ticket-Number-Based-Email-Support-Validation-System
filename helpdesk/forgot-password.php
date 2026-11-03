@@ -64,7 +64,7 @@ $csrfToken = SecurityService::generateCsrfToken();
 
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Account Email</label>
-                            <input type="email" name="email" class="form-control" required placeholder="name@example.com" autofocus>
+                            <input type="email" name="email" class="form-control" required placeholder="mail@websitesting.shop" autofocus>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
