@@ -42,7 +42,53 @@ class MailQueueService
             'custom_headers'  => $customHeaders ? json_encode($customHeaders, JSON_UNESCAPED_SLASHES) : null,
         ]);
 
-        return (int)Database::lastInsertId();
+        $queueId = (int)Database::lastInsertId();
+
+        // Database-First: Attempt opportunistic immediate dispatch
+        // If successful, marks 'sent' immediately so users don't wait for cron
+        if (!Database::inTransaction()) {
+            self::attemptImmediateDispatch($queueId, $recipientEmail, $recipientName, $subject, $bodyPlain, $bodyHtml, $replyToAddress, $customHeaders);
+        }
+
+        return $queueId;
+    }
+
+    /**
+     * Attempts immediate delivery of a newly enqueued message.
+     * Non-blocking: failures remain 'pending' for the background cron worker.
+     */
+    public static function attemptImmediateDispatch(
+        int $queueId,
+        string $toEmail,
+        string $toName,
+        string $subject,
+        string $bodyPlain,
+        ?string $bodyHtml = null,
+        ?string $replyTo = null,
+        ?array $customHeaders = null
+    ): void {
+        try {
+            require_once dirname(__DIR__) . '/mail/SMTPClient.php';
+            $result = SMTPClient::send($toEmail, $toName, $subject, $bodyPlain, $bodyHtml, $replyTo, $customHeaders);
+            if ($result['success']) {
+                Database::query(
+                    "UPDATE `email_queue` SET `status` = 'sent', `sent_at` = NOW(), `attempts` = 1 WHERE `id` = :id",
+                    ['id' => $queueId]
+                );
+                Database::query(
+                    "INSERT INTO `email_logs` (`queue_id`, `recipient_email`, `subject`, `status`, `smtp_response`, `created_at`) 
+                     VALUES (:qid, :recipient, :subject, 'success', :resp, NOW())",
+                    [
+                        'qid'       => $queueId,
+                        'recipient' => $toEmail,
+                        'subject'   => $subject,
+                        'resp'      => $result['response']
+                    ]
+                );
+            }
+        } catch (Throwable $e) {
+            // Non-blocking: remains pending for cron
+        }
     }
 
     /**
