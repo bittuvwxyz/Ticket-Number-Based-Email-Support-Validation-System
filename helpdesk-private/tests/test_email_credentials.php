@@ -2,50 +2,42 @@
 /**
  * Email Credential & Connectivity Diagnostic Tester
  * 
- * Tests both SMTP and IMAP connections against Gmail using the credentials from email.txt.
+ * Tests both SMTP and IMAP connections against the configured mail server in .env.
  */
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/../config/bootstrap.php';
 
 echo "============================================================\n";
 echo " Email Credentials Diagnostic Test\n";
 echo "============================================================\n\n";
 
-$emailTxtPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'email.txt';
+// Load configuration dynamically from .env / config
+$smtpHost   = config('mail.smtp.host', 'websitesting.shop');
+$smtpPort   = (int)config('mail.smtp.port', 465);
+$smtpUser   = config('mail.smtp.username', 'mail@websitesting.shop');
+$smtpPass   = config('mail.smtp.password', '');
+$smtpSecure = strtolower(config('mail.smtp.encryption', 'ssl'));
+$fromEmail  = config('mail.from.address', $smtpUser);
+$fromName   = config('mail.from.name', 'Support Desk');
 
-if (!file_exists($emailTxtPath)) {
-    echo "[ERROR] email.txt not found at {$emailTxtPath}\n";
-    exit(1);
-}
+$imapHost   = config('mail.imap.host', 'websitesting.shop');
+$imapPort   = (int)config('mail.imap.port', 993);
+$imapUser   = config('mail.imap.username', 'mail@websitesting.shop');
+$imapPass   = config('mail.imap.password', '');
+$imapSecure = strtolower(config('mail.imap.encryption', 'ssl'));
 
-// Parse email.txt
-$lines = file($emailTxtPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-$config = [];
-foreach ($lines as $line) {
-    $line = trim($line);
-    if ($line === '' || str_starts_with($line, '#')) continue;
-    if (str_contains($line, '=')) {
-        [$k, $v] = explode('=', $line, 2);
-        $config[trim($k)] = trim($v);
-    }
-}
-
-$smtpHost = $config['SMTP_HOST'] ?? 'smtp.gmail.com';
-$smtpPort = (int)($config['SMTP_PORT'] ?? 587);
-$smtpUser = $config['SMTP_USER'] ?? '';
-$smtpPass = $config['SMTP_PASS'] ?? '';
-$smtpSecure = strtolower($config['SMTP_SECURE'] ?? 'tls');
-$fromEmail = $config['MAIL_FROM_EMAIL'] ?? $smtpUser;
-$fromName = $config['MAIL_FROM_NAME'] ?? 'Support Desk';
-
-$imapHost = 'imap.gmail.com';
-$imapPort = 993;
-
-echo "Loaded Configuration:\n";
+echo "Loaded Configuration (from .env):\n";
 echo " - Account Email : {$smtpUser}\n";
-echo " - App Password  : " . substr($smtpPass, 0, 4) . "********" . substr($smtpPass, -4) . " (" . strlen($smtpPass) . " chars)\n";
+echo " - Password Set  : " . (!empty($smtpPass) && $smtpPass !== 'secure_email_password' ? 'YES (' . strlen($smtpPass) . ' chars)' : 'NO / PLACEHOLDER') . "\n";
 echo " - SMTP Server   : {$smtpHost}:{$smtpPort} ({$smtpSecure})\n";
-echo " - IMAP Server   : {$imapHost}:{$imapPort} (SSL)\n\n";
+echo " - IMAP Server   : {$imapHost}:{$imapPort} ({$imapSecure})\n\n";
+
+if (empty($smtpPass) || $smtpPass === 'secure_email_password') {
+    echo "[WARNING] MAIL_SMTP_PASSWORD / MAIL_IMAP_PASSWORD in helpdesk-private/.env is still set to the placeholder 'secure_email_password'!\n";
+    echo "Please set your real email account password in helpdesk-private/.env to test live authentication.\n\n";
+}
 
 // -------------------------------------------------------------
 // 1. SMTP Test via Raw Sockets (RFC 5321 & RFC 4954)
@@ -54,7 +46,7 @@ echo "1. Testing SMTP Connection & Authentication...\n";
 
 function testSmtp(string $host, int $port, string $user, string $pass, string $secure): array
 {
-    $timeout = 10;
+    $timeout = 5;
     $errno = 0;
     $errstr = '';
 
@@ -153,7 +145,12 @@ if ($smtpResult['status']) {
     echo "  Server response: " . $smtpResult['response'] . "\n\n";
 } else {
     echo "  [FAILED] SMTP Failed at step '{$smtpResult['step']}':\n";
-    echo "  Error: " . $smtpResult['error'] . "\n\n";
+    echo "  Error: " . $smtpResult['error'] . "\n";
+    if (str_contains($smtpResult['error'], 'Failed to connect') || str_contains($smtpResult['error'], 'timed out')) {
+        echo "  [TIP] If {$smtpHost} is behind Cloudflare, Cloudflare's proxy blocks mail ports (465, 587, 993).\n";
+        echo "        Use your direct cPanel server IP or an unproxied 'DNS only' subdomain (e.g. mail.{$smtpHost}) in .env.\n";
+    }
+    echo "\n";
 }
 
 // -------------------------------------------------------------
@@ -162,9 +159,9 @@ if ($smtpResult['status']) {
 echo "2. Testing IMAP Connection & Authentication...\n";
 
 if (function_exists('imap_open')) {
+    imap_timeout(IMAP_OPENTIMEOUT, 5);
     $mailbox = "{" . $imapHost . ":" . $imapPort . "/imap/ssl/novalidate-cert}INBOX";
-    // Suppress warnings to catch errors cleanly
-    $imapStream = @imap_open($mailbox, $smtpUser, $smtpPass, OP_READONLY, 1, ['DISABLE_AUTHENTICATOR' => 'GSSAPI']);
+    $imapStream = @imap_open($mailbox, $imapUser, $imapPass, OP_READONLY, 1, ['DISABLE_AUTHENTICATOR' => 'GSSAPI']);
 
     if ($imapStream) {
         $check = imap_check($imapStream);
@@ -177,20 +174,23 @@ if (function_exists('imap_open')) {
     } else {
         $lastError = imap_last_error();
         echo "  [FAILED] IMAP Connection failed.\n";
-        echo "  Error: " . ($lastError ?: 'Unknown error') . "\n\n";
+        echo "  Error: " . ($lastError ?: 'Unknown error') . "\n";
+        if (str_contains($lastError ?: '', 'Certificate failure') || str_contains($lastError ?: '', 'Host not found') || str_contains($lastError ?: '', 'Connection refused') || empty($lastError)) {
+            echo "  [TIP] If {$imapHost} is behind Cloudflare, create an unproxied DNS-only A record (e.g. mail.{$imapHost}) or use the cPanel server IP in .env.\n";
+        }
+        echo "\n";
         $imapOk = false;
     }
 } else {
     echo "  [INFO] imap_open() function not loaded in this PHP process, falling back to raw IMAP SSL socket test...\n";
-    // Direct SSL socket authentication to IMAP server
     $imapSocket = @fsockopen("ssl://{$imapHost}", $imapPort, $errno, $errstr, 10);
     if (!$imapSocket) {
-        echo "  [FAILED] Cannot connect to ssl://{$imapHost}:{$imapPort}: {$errstr} ({$errno})\n\n";
+        echo "  [FAILED] Cannot connect to ssl://{$imapHost}:{$imapPort}: {$errstr} ({$errno})\n";
+        echo "  [TIP] Ensure port {$imapPort} is open and not blocked by Cloudflare proxy or hosting firewall.\n\n";
         $imapOk = false;
     } else {
         $banner = fgets($imapSocket, 512);
-        // Send IMAP LOGIN command: A001 LOGIN username password
-        fputs($imapSocket, "A001 LOGIN \"{$smtpUser}\" \"{$smtpPass}\"\r\n");
+        fputs($imapSocket, "A001 LOGIN \"{$imapUser}\" \"{$imapPass}\"\r\n");
         $loginResponse = '';
         while ($line = fgets($imapSocket, 512)) {
             $loginResponse .= $line;
