@@ -171,7 +171,7 @@ $ticketNum = $ticketResult['ticket_number'];
 $replyAddress = $ticketResult['reply_address'];
 
 assertTest("Human-readable ticket number generated (REQ-YYYY-XXXXX)", (bool)preg_match('/^REQ-\d{4}-\d{5}$/', $ticketNum), "Ticket Number: {$ticketNum}");
-assertTest("Reply address matches configured format", str_contains($replyAddress, 'reply+'));
+assertTest("Reply address matches configured format", str_contains($replyAddress, config('mail.reply_routing.prefix', 'reply+')));
 
 $dbTicket = Database::fetchOne("SELECT * FROM `tickets` WHERE `id` = :id", ['id' => $ticketId]);
 assertTest("Ticket stored in database with status 'open'", ($dbTicket['status'] ?? '') === 'open');

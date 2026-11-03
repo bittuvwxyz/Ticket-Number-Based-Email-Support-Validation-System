@@ -184,7 +184,7 @@ class TicketService
 
             // 6. Enqueue confirmation email
             $replyAddress = self::generateReplyAddress($rawToken);
-            MailQueueService::enqueueTicketConfirmationEmail(
+            $queueId = MailQueueService::enqueueTicketConfirmationEmail(
                 $ticketData,
                 $customer['email'],
                 "{$customer['first_name']} {$customer['last_name']}",
@@ -196,9 +196,52 @@ class TicketService
                 'ticket_id'     => $ticketId,
                 'ticket_number' => $ticketNumber,
                 'reply_address' => $replyAddress,
+                'raw_token'     => $rawToken,
+                'queue_id'      => $queueId,
                 'message'       => "Support ticket #{$ticketNumber} has been created successfully."
             ];
         });
+
+        // Immediately dispatch the confirmation email outside the database transaction
+        if (!empty($result['success']) && !empty($result['queue_id'])) {
+            MailQueueService::dispatchQueueItem((int)$result['queue_id']);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Generates a new active reply token for an existing ticket and persists its SHA-256 hash.
+     */
+    public static function generateReplyTokenForTicket(int $ticketId, int $userId): array
+    {
+        $tokenBytes = (int)config('mail.reply_routing.token_length_bytes', 16);
+        $rawToken = bin2hex(random_bytes($tokenBytes));
+        $tokenHash = hash('sha256', $rawToken);
+        $tokenPrefix = substr($rawToken, 0, 8);
+        $expiryDays = (int)config('mail.reply_routing.token_expiry_days', 14);
+        $tokenExpires = date('Y-m-d H:i:s', strtotime("+{$expiryDays} days"));
+
+        Database::query(
+            "INSERT INTO `email_tokens` 
+             (`ticket_id`, `user_id`, `token_hash`, `token_prefix`, `is_revoked`, `expires_at`, `created_at`) 
+             VALUES 
+             (:ticket_id, :user_id, :hash, :prefix, 0, :expires, NOW())",
+            [
+                'ticket_id' => $ticketId,
+                'user_id'   => $userId,
+                'hash'      => $tokenHash,
+                'prefix'    => $tokenPrefix,
+                'expires'   => $tokenExpires,
+            ]
+        );
+
+        $replyAddress = self::generateReplyAddress($rawToken);
+        return [
+            'raw_token'     => $rawToken,
+            'reply_address' => $replyAddress,
+            'expires_at'    => $tokenExpires
+        ];
     }
 
     /**

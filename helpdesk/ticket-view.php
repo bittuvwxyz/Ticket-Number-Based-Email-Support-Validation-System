@@ -54,6 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 'web'
             );
 
+            // Generate active reply token & address for this ticket update
+            $tokenInfo = TicketService::generateReplyTokenForTicket($ticketId, (int)$ticket['customer_id']);
+
+            // Send notification to the opposing party
+            if ($isStaff) {
+                $recipientEmail = $ticket['customer_email'];
+                $recipientName = "{$ticket['first_name']} {$ticket['last_name']}";
+            } else {
+                $recipientEmail = config('app.admin_email', 'workxbittu@gmail.com');
+                $recipientName = "Support Desk Staff";
+            }
+
+            $replyQueueId = MailQueueService::enqueueTicketReplyEmail(
+                $ticket,
+                $senderName,
+                $senderType,
+                $replyBody,
+                $recipientEmail,
+                $recipientName,
+                $tokenInfo['reply_address']
+            );
+
+            MailQueueService::dispatchQueueItem($replyQueueId);
+
             // Re-open ticket if closed and policy permits
             if ($ticket['status'] === 'closed') {
                 Database::query("UPDATE `tickets` SET `status` = 'reopened' WHERE `id` = :id", ['id' => $ticketId]);

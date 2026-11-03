@@ -92,6 +92,99 @@ class MailQueueService
     }
 
     /**
+     * Dispatches a specific queue item by its ID.
+     */
+    public static function dispatchQueueItem(int $queueId): bool
+    {
+        $item = Database::fetchOne(
+            "SELECT * FROM `email_queue` WHERE `id` = :id AND `status` = 'pending'",
+            ['id' => $queueId]
+        );
+
+        if (!$item) {
+            return false;
+        }
+
+        $customHeaders = !empty($item['custom_headers']) ? json_decode($item['custom_headers'], true) : [];
+        self::attemptImmediateDispatch(
+            $queueId,
+            $item['recipient_email'],
+            $item['recipient_name'] ?: $item['recipient_email'],
+            $item['subject'],
+            $item['body_plain'],
+            $item['body_html'],
+            $item['reply_to_address'],
+            $customHeaders
+        );
+
+        $check = Database::fetchOne("SELECT `status` FROM `email_queue` WHERE `id` = :id", ['id' => $queueId]);
+        return ($check['status'] ?? '') === 'sent';
+    }
+
+    /**
+     * Enqueues a notification email when a new message/reply is posted to a ticket.
+     */
+    public static function enqueueTicketReplyEmail(
+        array $ticket,
+        string $senderName,
+        string $senderType,
+        string $messageBody,
+        string $recipientEmail,
+        string $recipientName,
+        string $replyAddress
+    ): int {
+        $appName = config('app.name', 'Secure Support Desk');
+        $ticketNum = $ticket['ticket_number'];
+        $subject = "Re: [{$ticketNum}] {$ticket['subject']}";
+
+        $bodyPlain = "Hello {$recipientName},\n\n"
+                   . "A new reply has been posted to ticket {$ticketNum} by {$senderName}:\n\n"
+                   . "--------------------------------------------------\n"
+                   . "{$messageBody}\n"
+                   . "--------------------------------------------------\n\n"
+                   . "You can reply directly to this email to add additional details to this ticket.\n\n"
+                   . "Regards,\n{$appName} Team";
+
+        $bodyHtml = "
+        <div style='font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+            <div style='background-color: #f8f9fa; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;'>
+                <span style='font-size: 11px; font-weight: bold; color: #6c757d; text-transform: uppercase;'>Ticket Update</span>
+                <h4 style='margin: 4px 0 0 0; color: #0d6efd;'>{$ticketNum}: " . htmlspecialchars($ticket['subject']) . "</h4>
+            </div>
+            <p>Hello <strong>" . htmlspecialchars($recipientName) . "</strong>,</p>
+            <p><strong>" . htmlspecialchars($senderName) . "</strong> (" . ucfirst(htmlspecialchars($senderType)) . ") has posted an update:</p>
+            
+            <div style='background-color: #f8fafc; border-left: 4px solid #0d6efd; padding: 14px 18px; margin: 20px 0; font-size: 14px; line-height: 1.6;'>
+                " . nl2br(htmlspecialchars($messageBody)) . "
+            </div>
+
+            <p style='background-color: #e8f4fd; padding: 12px; border-radius: 6px; color: #0c5460; font-size: 13px;'>
+                <i style='font-weight: bold;'>Reply via Email:</i> Simply click <strong>Reply</strong> in your email client to respond directly to this ticket.
+            </p>
+
+            <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+            <p style='color: #888; font-size: 12px;'>{$appName} - Automated Notification System</p>
+        </div>";
+
+        $customHeaders = [
+            'X-Ticket-ID' => $ticketNum,
+            'In-Reply-To' => "<ticket-{$ticket['id']}@" . config('mail.reply_routing.domain') . ">",
+            'References'  => "<ticket-{$ticket['id']}@" . config('mail.reply_routing.domain') . ">",
+        ];
+
+        return self::enqueue(
+            $recipientEmail,
+            $recipientName,
+            $subject,
+            $bodyPlain,
+            $bodyHtml,
+            (int)$ticket['id'],
+            $replyAddress,
+            $customHeaders
+        );
+    }
+
+    /**
      * Enqueues an account email verification message.
      */
     public static function enqueueVerificationEmail(string $email, string $name, string $token): int
