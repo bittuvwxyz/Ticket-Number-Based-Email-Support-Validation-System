@@ -86,7 +86,7 @@ foreach ($expectedTables as $tbl) {
 
 // 4. Seeded Data Verification
 echo "\nTest 4: System Settings & Administrator Seed Verification\n";
-$adminEmail = config('app.admin_email', 'workxbittu@gmail.com');
+$adminEmail = config('app.admin_email', 'mail@websitesting.shop');
 $adminUser = Database::fetchOne("SELECT * FROM `users` WHERE `email` = :email", ['email' => $adminEmail]);
 assertTest("Admin user account exists ({$adminEmail})", $adminUser !== null);
 if ($adminUser) {

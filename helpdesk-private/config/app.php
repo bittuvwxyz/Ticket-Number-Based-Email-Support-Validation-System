@@ -12,7 +12,7 @@ return [
     'debug'    => filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN),
     'url'         => rtrim($_ENV['APP_URL'] ?? 'http://localhost/helpdesk', '/'),
     'timezone'    => $_ENV['APP_TIMEZONE'] ?? 'UTC',
-    'admin_email' => $_ENV['ADMIN_EMAIL'] ?? ($_ENV['MAIL_FROM_ADDRESS'] ?? 'workxbittu@gmail.com'),
+    'admin_email' => $_ENV['ADMIN_EMAIL'] ?? ($_ENV['MAIL_FROM_ADDRESS'] ?? 'mail@websitesting.shop'),
     'paths'    => [
         'root'        => $rootPath,
         'storage'     => $rootPath . DIRECTORY_SEPARATOR . 'storage',

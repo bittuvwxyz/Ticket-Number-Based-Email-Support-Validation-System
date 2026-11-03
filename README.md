@@ -45,7 +45,15 @@ To protect database credentials, configuration files, logs, and attachments on s
 │   │   ├── SecurityService.php        <-- CSRF, rate-limiting, audit logging, escaping
 │   │   ├── AuthService.php            <-- Registration, login, password reset, sessions
 │   │   ├── TicketService.php          <-- Number generation, token hashing, ticket CRUD
-│   │   └── MailQueueService.php       <-- Database-first outbound email queueing
+│   │   ├── MailQueueService.php       <-- Database-first outbound email queueing
+│   │   └── EmailValidationService.php <-- Inbound reply validation engine
+│   ├── mail/
+│   │   ├── MIMEParser.php             <-- Header decoder & quoted text stripper
+│   │   ├── IMAPClient.php             <-- Inbound IMAP ingestion & processing client
+│   │   └── SMTPClient.php             <-- Outbound PHPMailer dispatcher
+│   ├── cron/
+│   │   ├── process_outgoing_queue.php <-- Queue dispatcher with lock protection
+│   │   └── process_incoming_emails.php<-- IMAP processor with lock protection
 │   ├── logs/                          <-- Application logs & security audits
 │   ├── storage/
 │   │   ├── attachments/               <-- Secure attachment repository
@@ -53,6 +61,7 @@ To protect database credentials, configuration files, logs, and attachments on s
 │   └── tests/
 │       ├── phase1_test.php            <-- Phase 1 DB & connection test suite
 │       ├── phase2_test.php            <-- Phase 2 Auth & ticket creation test suite
+│       ├── phase3_test.php            <-- Phase 3 Token & validation test suite
 │       └── test_email_credentials.php <-- Live SMTP & IMAP socket credential tester
 └── helpdesk/                          <-- Public web root (public_html/helpdesk)
     ├── .htaccess                      <-- Security headers, disabled directory indexing
@@ -161,6 +170,28 @@ Location: `helpdesk-private/services/MailQueueService.php`
 
 ---
 
+### 6. `EmailValidationService.php` (Inbound Reply Validation Engine)
+Location: `helpdesk-private/services/EmailValidationService.php`
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `extractTokenFromAddress()` | `EmailValidationService::extractTokenFromAddress(string $toAddress): ?string` | Extracts hexadecimal token from plus-addressed address (e.g. `mail+{token}@websitesting.shop`). |
+| `extractTicketNumberFromSubject()` | `EmailValidationService::extractTicketNumberFromSubject(string $subject): ?string` | Extracts tracking ticket number (e.g. `REQ-2026-10001`) from email Subject line via regex. |
+| `validateInboundMessage()` | `EmailValidationService::validateInboundMessage(array $message): array` | Core validation pipeline checking token validity, token revocation, token expiration, authorized sender list, ticket status (rejects closed if policy forbids), blocked addresses, and duplicate `Message-ID`. |
+
+---
+
+### 7. `MIMEParser.php` (Header & Quoting Stripper)
+Location: `helpdesk-private/mail/MIMEParser.php`
+
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| `decodeHeader()` | `MIMEParser::decodeHeader(?string $text): string` | Decodes RFC 2047 MIME-encoded header fields (UTF-8, ISO-8859-1). |
+| `extractEmail()` | `MIMEParser::extractEmail(string $address): string` | Extracts pure email address from `"Name <user@domain.com>"` headers. |
+| `stripQuotes()` | `MIMEParser::stripQuotes(string $plainText): string` | Strips reply attribution lines (`On ... wrote:`, `From: ...`, `-----Original Message-----`) and `>` blockquotes to keep only fresh replies. |
+
+---
+
 ## 🚀 Installation & Setup Guide
 
 ### Prerequisites
@@ -184,7 +215,7 @@ Edit `helpdesk-private/.env` with your database and email credentials:
 APP_NAME="Secure Ticket Support"
 APP_ENV="development"
 APP_URL="http://localhost/helpdesk"
-ADMIN_EMAIL="workxbittu@gmail.com"
+ADMIN_EMAIL="mail@websitesting.shop"
 
 # MySQL Database
 DB_HOST="127.0.0.1"
@@ -194,25 +225,25 @@ DB_USERNAME="root"
 DB_PASSWORD=""
 
 # Inbound IMAP
-MAIL_IMAP_HOST="imap.gmail.com"
+MAIL_IMAP_HOST="websitesting.shop"
 MAIL_IMAP_PORT=993
 MAIL_IMAP_ENCRYPTION="ssl"
-MAIL_IMAP_USERNAME="workxbittu@gmail.com"
-MAIL_IMAP_PASSWORD="your_app_password"
+MAIL_IMAP_USERNAME="mail@websitesting.shop"
+MAIL_IMAP_PASSWORD="secure_email_password"
 
 # Outbound SMTP
-MAIL_SMTP_HOST="smtp.gmail.com"
-MAIL_SMTP_PORT=587
-MAIL_SMTP_ENCRYPTION="tls"
+MAIL_SMTP_HOST="websitesting.shop"
+MAIL_SMTP_PORT=465
+MAIL_SMTP_ENCRYPTION="ssl"
 MAIL_SMTP_AUTH=true
-MAIL_SMTP_USERNAME="workxbittu@gmail.com"
-MAIL_SMTP_PASSWORD="your_app_password"
-MAIL_FROM_ADDRESS="workxbittu@gmail.com"
+MAIL_SMTP_USERNAME="mail@websitesting.shop"
+MAIL_SMTP_PASSWORD="secure_email_password"
+MAIL_FROM_ADDRESS="mail@websitesting.shop"
 MAIL_FROM_NAME="Support Desk"
 
 # Reply Routing Domain
-MAIL_REPLY_DOMAIN="gmail.com"
-MAIL_REPLY_PREFIX="reply+"
+MAIL_REPLY_DOMAIN="websitesting.shop"
+MAIL_REPLY_PREFIX="mail+"
 ```
 
 ### 3. Run Database Migrations
@@ -247,7 +278,14 @@ php helpdesk-private/tests/phase2_test.php
 ```
 *Expected Result: `40 Passed, 0 Failed`*
 
-### 3. Test Live Email Credentials (SMTP & IMAP)
+### 3. Run Phase 3 Test Suite (Ticket Numbers & Reply Token Validation)
+Validates address extraction from plus-addressed formats, ticket number regex extraction, quotation stripping, positive validation matching, invalid token rejection, unauthorized sender rejection, expired token rejection, revoked token rejection, and duplicate Message-ID rejection:
+```bash
+php helpdesk-private/tests/phase3_test.php
+```
+*Expected Result: `15 Passed, 0 Failed`*
+
+### 4. Test Live Email Credentials (SMTP & IMAP)
 Tests real socket connections against mail servers to verify authentication:
 ```bash
 php helpdesk-private/tests/test_email_credentials.php
@@ -265,7 +303,7 @@ php helpdesk-private/tests/test_email_credentials.php
    - Register a new customer account with full input validation.
 3. **Login Portal**:
    - URL: `http://localhost/helpdesk/login.php`
-   - Default Administrator: `workxbittu@gmail.com` / `Admin@123456`.
+   - Default Administrator: `mail@websitesting.shop` / `Admin@123456`.
 4. **Customer Dashboard**:
    - URL: `http://localhost/helpdesk/dashboard.php`
    - Real-time statistics counters for Total, Open, Pending, and Closed tickets.
@@ -284,32 +322,15 @@ The system uses a database-first email queue and requires background execution t
 
 ### Option A: Windows Task Scheduler (Local Development & Windows Servers)
 
-#### 1. One-Click Command (PowerShell / Command Prompt as Administrator)
-You can create a recurring Windows scheduled task that runs every 1 minute with a single command:
+#### 1. Outgoing Email Queue Dispatcher (Every 1 minute):
 ```cmd
 schtasks /create /tn "Helpdesk_Outgoing_Queue" /tr "C:\xampp\php\php.exe -f C:\xampp\htdocs\helpdesk-private\cron\process_outgoing_queue.php" /sc minute /mo 1 /ru SYSTEM
 ```
 
-#### 2. Manual GUI Configuration in Windows
-1. Press `Win + R`, type `taskschd.msc`, and press **Enter**.
-2. Click **Create Task...** on the right sidebar.
-3. **General Tab**:
-   - Name: `Helpdesk Outgoing Queue`
-   - Select: `Run whether user is logged on or not` (or `Run only when user is logged on`)
-4. **Triggers Tab**:
-   - Click **New...**
-   - Begin the task: `On a schedule` (Daily)
-   - Advanced settings: Check **Repeat task every:** `1 minute` for a duration of: `Indefinitely`
-5. **Actions Tab**:
-   - Click **New...**
-   - Action: `Start a program`
-   - Program/script: `C:\xampp\php\php.exe`
-   - Add arguments: `-f "C:\xampp\htdocs\helpdesk-private\cron\process_outgoing_queue.php"`
-   - Start in: `C:\xampp\htdocs\helpdesk-private`
-6. Click **OK** to save.
-
-*Alternative: You can directly point the Action to the pre-configured batch script:*
-`C:\xampp\htdocs\helpdesk-private\cron\run_outgoing_queue.bat`
+#### 2. Inbound IMAP Email Processor (Every 2 minutes):
+```cmd
+schtasks /create /tn "Helpdesk_Incoming_Emails" /tr "C:\xampp\php\php.exe -f C:\xampp\htdocs\helpdesk-private\cron\process_incoming_emails.php" /sc minute /mo 2 /ru SYSTEM
+```
 
 ---
 
@@ -318,10 +339,13 @@ schtasks /create /tn "Helpdesk_Outgoing_Queue" /tr "C:\xampp\php\php.exe -f C:\x
 1. Log in to your **cPanel**.
 2. Under the **Advanced** section, click **Cron Jobs**.
 3. Under **Add New Cron Job**:
-   - **Common Settings**: Select `Once Per Minute (* * * * *)` (or `Every 5 Minutes (*/5 * * * *)`).
-   - **Command**:
+   - **Outgoing Email Queue (Once Per Minute `* * * * *`)**:
      ```bash
      /usr/local/bin/php /home/username/helpdesk-private/cron/process_outgoing_queue.php >/dev/null 2>&1
+     ```
+   - **Inbound Email Processor (Every 2 Minutes `*/2 * * * *`)**:
+     ```bash
+     /usr/local/bin/php /home/username/helpdesk-private/cron/process_incoming_emails.php >/dev/null 2>&1
      ```
      *(Replace `/home/username/` with your actual cPanel home directory path).*
 4. Click **Add New Cron Job**.
@@ -355,7 +379,7 @@ git push origin main
 
 - [x] **Phase 1: Hosting setup, database architecture & connectivity**
 - [x] **Phase 2: User authentication, email verification & ticket creation**
-- [ ] **Phase 3: Ticket numbers, secure reply tokens and token validation**
+- [x] **Phase 3: Ticket numbers, secure reply tokens and token validation**
 - [ ] **Phase 4: PHPMailer outgoing email system and email queue**
 - [ ] **Phase 5: IMAP incoming email processing engine**
 - [ ] **Phase 6: Sender validation, rejection, quarantine and security logging**

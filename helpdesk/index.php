@@ -156,7 +156,7 @@ $systemReady = $phpOk && $allExtsOk && ($dbStatus['status'] === 'success') && ($
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                                         <span>Default Administrator</span>
-                                        <span class="badge bg-info text-dark"><?= htmlspecialchars(config('app.admin_email', 'workxbittu@gmail.com')) ?> (Seeded)</span>
+                                        <span class="badge bg-info text-dark"><?= htmlspecialchars(config('app.admin_email', 'mail@websitesting.shop')) ?> (Seeded)</span>
                                     </li>
                                 </ul>
                             </div>

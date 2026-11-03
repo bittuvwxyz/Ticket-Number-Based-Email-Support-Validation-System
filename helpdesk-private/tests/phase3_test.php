@@ -3,7 +3,7 @@
  * Phase 3 Automated Integration Test Suite
  * 
  * Verifies:
- * - Token extraction from plus-addressed email (workxbittu+token@domain)
+ * - Token extraction from plus-addressed email (mail+token@websitesting.shop)
  * - Ticket number extraction from subject line ([REQ-YYYY-XXXXX])
  * - Validation engine cases:
  *     1. Valid ticket + valid token + authorized sender -> Accepted
@@ -48,8 +48,11 @@ function assertTest(string $description, bool $condition, ?string $detail = null
 // Test 1: Address and Subject Extractions
 // -------------------------------------------------------------
 echo "Test 1: Address & Subject Parsing\n";
+$replyPrefix = config('mail.reply_routing.prefix', 'mail+');
+$replyDomain = config('mail.reply_routing.domain', 'websitesting.shop');
+
 $dummyToken = "3c712dfd1393ca13fdbb17b26ac2eef3";
-$address = "workxbittu+{$dummyToken}@gmail.com";
+$address = "{$replyPrefix}{$dummyToken}@{$replyDomain}";
 $extractedToken = EmailValidationService::extractTokenFromAddress($address);
 assertTest("Token extracted accurately from plus-addressed recipient", $extractedToken === $dummyToken);
 
@@ -96,7 +99,7 @@ $activeRawToken = $tokenInfo['raw_token'];
 echo "\nTest 3: Valid Inbound Message Acceptance\n";
 $validEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu+{$activeRawToken}@gmail.com",
+    'to_email'          => "{$replyPrefix}{$activeRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => '<msg-valid-001@mail.example.com>',
     'body_plain'        => 'Here is my reply to the ticket.'
@@ -112,7 +115,7 @@ assertTest("Resolved ticket ID matches", (int)($resValid['ticket_id'] ?? 0) === 
 echo "\nTest 4: Missing Reference & Token\n";
 $missingEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu@gmail.com",
+    'to_email'          => config('mail.from.address', 'mail@websitesting.shop'),
     'subject'           => "Just a random question with no ticket number",
     'message_id_header' => '<msg-missing-002@mail.example.com>',
     'body_plain'        => 'Random body.'
@@ -127,7 +130,7 @@ assertTest("Missing ticket reference REJECTED", $resMissing['result'] === EmailV
 echo "\nTest 5: Invalid Token Handling\n";
 $invalidTokenEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu+deadbeefdeadbeefdeadbeefdeadbeef@gmail.com",
+    'to_email'          => "{$replyPrefix}deadbeefdeadbeefdeadbeefdeadbeef@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => '<msg-inv-003@mail.example.com>',
     'body_plain'        => 'Random body.'
@@ -142,7 +145,7 @@ assertTest("Non-existent token REJECTED", $resInvalidToken['result'] === EmailVa
 echo "\nTest 6: Unauthorized Sender Handling\n";
 $unauthEmail = [
     'from_email'        => 'stranger@imposter.com',
-    'to_email'          => "workxbittu+{$activeRawToken}@gmail.com",
+    'to_email'          => "{$replyPrefix}{$activeRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => '<msg-unauth-004@mail.example.com>',
     'body_plain'        => 'Attempting to inject a reply.'
@@ -171,7 +174,7 @@ Database::query(
 
 $expiredEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu+{$expiredRawToken}@gmail.com",
+    'to_email'          => "{$replyPrefix}{$expiredRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => '<msg-exp-005@mail.example.com>',
     'body_plain'        => 'Reply using expired token.'
@@ -200,7 +203,7 @@ Database::query(
 
 $revokedEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu+{$revokedRawToken}@gmail.com",
+    'to_email'          => "{$replyPrefix}{$revokedRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => '<msg-rev-006@mail.example.com>',
     'body_plain'        => 'Reply using revoked token.'
@@ -226,7 +229,7 @@ Database::query(
 
 $dupEmail = [
     'from_email'        => $testUserEmail,
-    'to_email'          => "workxbittu+{$activeRawToken}@gmail.com",
+    'to_email'          => "{$replyPrefix}{$activeRawToken}@{$replyDomain}",
     'subject'           => "Re: [{$testTicketNumber}] Validation Suite Ticket",
     'message_id_header' => 'dup-msg-id-999',
     'body_plain'        => 'Duplicate attempt.'

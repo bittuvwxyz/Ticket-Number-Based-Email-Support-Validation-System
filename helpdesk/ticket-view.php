@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $recipientEmail = $ticket['customer_email'];
                 $recipientName = "{$ticket['first_name']} {$ticket['last_name']}";
             } else {
-                $recipientEmail = config('app.admin_email', 'workxbittu@gmail.com');
+                $recipientEmail = config('app.admin_email', 'mail@websitesting.shop');
                 $recipientName = "Support Desk Staff";
             }
 
