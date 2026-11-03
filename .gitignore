@@ -1,6 +1,7 @@
 # Environment & Secret Configuration
 helpdesk-private/.env
 .env
+email.txt
 
 # Application Storage & Attachments
 helpdesk-private/storage/attachments/*
