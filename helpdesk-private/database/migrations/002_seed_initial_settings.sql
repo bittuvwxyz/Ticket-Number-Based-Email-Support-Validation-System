@@ -16,7 +16,7 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`, `setting_type`, `
 ('require_email_verification', '1', 'boolean', 'Require users to verify email before creating tickets')
 ON DUPLICATE KEY UPDATE `updated_at` = CURRENT_TIMESTAMP;
 
--- Default Administrator (admin@example.com / Admin@123456)
+-- Default Administrator (workxbittu@gmail.com / Admin@123456)
 INSERT INTO `users` (`role`, `email`, `password_hash`, `first_name`, `last_name`, `is_verified`, `status`)
-VALUES ('admin', 'admin@example.com', '$2y$10$JUFi3QS4e12mHNo8MKIYCukT6Ys2pvsvIo8hjrx9rVFt2kCpPA3VO', 'System', 'Administrator', 1, 'active')
-ON DUPLICATE KEY UPDATE `status` = 'active';
+VALUES ('admin', 'workxbittu@gmail.com', '$2y$10$JUFi3QS4e12mHNo8MKIYCukT6Ys2pvsvIo8hjrx9rVFt2kCpPA3VO', 'System', 'Administrator', 1, 'active')
+ON DUPLICATE KEY UPDATE `status` = 'active', `email` = 'workxbittu@gmail.com';

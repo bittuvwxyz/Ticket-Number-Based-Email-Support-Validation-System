@@ -86,8 +86,9 @@ foreach ($expectedTables as $tbl) {
 
 // 4. Seeded Data Verification
 echo "\nTest 4: System Settings & Administrator Seed Verification\n";
-$adminUser = Database::fetchOne("SELECT * FROM `users` WHERE `email` = :email", ['email' => 'admin@example.com']);
-assertTest("Admin user account exists", $adminUser !== null);
+$adminEmail = config('app.admin_email', 'workxbittu@gmail.com');
+$adminUser = Database::fetchOne("SELECT * FROM `users` WHERE `email` = :email", ['email' => $adminEmail]);
+assertTest("Admin user account exists ({$adminEmail})", $adminUser !== null);
 if ($adminUser) {
     assertTest("Admin role is 'admin'", $adminUser['role'] === 'admin');
     assertTest("Admin is verified", (int)$adminUser['is_verified'] === 1);
@@ -147,7 +148,7 @@ echo "\nTest 8: Unique Constraint Enforcement\n";
 try {
     $uniqueFailed = false;
     try {
-        Database::execute("INSERT INTO `users` (`role`, `email`, `password_hash`, `first_name`, `last_name`) VALUES ('customer', 'admin@example.com', 'hash', 'Dup', 'User')");
+        Database::execute("INSERT INTO `users` (`role`, `email`, `password_hash`, `first_name`, `last_name`) VALUES ('customer', :email, 'hash', 'Dup', 'User')", ['email' => $adminEmail]);
     } catch (PDOException $ex) {
         $uniqueFailed = true;
     }
