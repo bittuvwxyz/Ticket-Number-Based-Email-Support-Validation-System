@@ -46,7 +46,13 @@ if (file_exists($envFile) && is_readable($envFile)) {
     }
 }
 
-// 2. Class Autoloader
+// 2. Load Composer autoloader if present
+$composerAutoload = $baseDir . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+if (file_exists($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
+// 3. Class Autoloader
 spl_autoload_register(function (string $class) use ($baseDir): void {
     // Map of directories containing application classes
     $directories = [

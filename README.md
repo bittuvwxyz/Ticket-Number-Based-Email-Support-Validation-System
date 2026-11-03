@@ -278,6 +278,59 @@ php helpdesk-private/tests/test_email_credentials.php
 
 ---
 
+## ⏰ Automated Task Scheduling: Windows & cPanel
+
+The system uses a database-first email queue and requires background execution to dispatch queued emails and retrieve inbound replies without permanent PHP daemons.
+
+### Option A: Windows Task Scheduler (Local Development & Windows Servers)
+
+#### 1. One-Click Command (PowerShell / Command Prompt as Administrator)
+You can create a recurring Windows scheduled task that runs every 1 minute with a single command:
+```cmd
+schtasks /create /tn "Helpdesk_Outgoing_Queue" /tr "C:\xampp\php\php.exe -f C:\xampp\htdocs\helpdesk-private\cron\process_outgoing_queue.php" /sc minute /mo 1 /ru SYSTEM
+```
+
+#### 2. Manual GUI Configuration in Windows
+1. Press `Win + R`, type `taskschd.msc`, and press **Enter**.
+2. Click **Create Task...** on the right sidebar.
+3. **General Tab**:
+   - Name: `Helpdesk Outgoing Queue`
+   - Select: `Run whether user is logged on or not` (or `Run only when user is logged on`)
+4. **Triggers Tab**:
+   - Click **New...**
+   - Begin the task: `On a schedule` (Daily)
+   - Advanced settings: Check **Repeat task every:** `1 minute` for a duration of: `Indefinitely`
+5. **Actions Tab**:
+   - Click **New...**
+   - Action: `Start a program`
+   - Program/script: `C:\xampp\php\php.exe`
+   - Add arguments: `-f "C:\xampp\htdocs\helpdesk-private\cron\process_outgoing_queue.php"`
+   - Start in: `C:\xampp\htdocs\helpdesk-private`
+6. Click **OK** to save.
+
+*Alternative: You can directly point the Action to the pre-configured batch script:*
+`C:\xampp\htdocs\helpdesk-private\cron\run_outgoing_queue.bat`
+
+---
+
+### Option B: cPanel Cron Jobs (Linux Shared Hosting)
+
+1. Log in to your **cPanel**.
+2. Under the **Advanced** section, click **Cron Jobs**.
+3. Under **Add New Cron Job**:
+   - **Common Settings**: Select `Once Per Minute (* * * * *)` (or `Every 5 Minutes (*/5 * * * *)`).
+   - **Command**:
+     ```bash
+     /usr/local/bin/php /home/username/helpdesk-private/cron/process_outgoing_queue.php >/dev/null 2>&1
+     ```
+     *(Replace `/home/username/` with your actual cPanel home directory path).*
+4. Click **Add New Cron Job**.
+
+> [!NOTE]
+> All cron and task scheduler scripts include overlapping execution protection (`flock`), preventing duplicate execution even if a batch takes longer than one minute.
+
+---
+
 ## 🔄 Git Workflow: Staging, Committing & Pushing
 
 Whenever changes are made to the codebase, use the following commands:

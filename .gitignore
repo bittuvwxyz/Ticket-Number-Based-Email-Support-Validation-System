@@ -7,6 +7,7 @@ email.txt
 helpdesk-private/storage/attachments/*
 !helpdesk-private/storage/attachments/.gitkeep
 !helpdesk-private/storage/attachments/.htaccess
+helpdesk-private/storage/*.lock
 
 # Database Backups & Dumps
 helpdesk-private/storage/backups/*
