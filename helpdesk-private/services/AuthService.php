@@ -156,12 +156,15 @@ class AuthService
         $email = strtolower(trim($email));
 
         // 1. Rate limiting check
-        if (SecurityService::isIpRateLimited($ip, 5, 15) || SecurityService::isEmailRateLimited($email, 5, 15)) {
+        $decayMinutes = (int)config('app.auth.rate_limit_decay_minutes', 1);
+        $maxAttempts = (int)config('app.auth.rate_limit_attempts', 5);
+
+        if (SecurityService::isIpRateLimited($ip, $maxAttempts, $decayMinutes) || SecurityService::isEmailRateLimited($email, $maxAttempts, $decayMinutes)) {
             SecurityService::recordLoginAttempt($email, $ip, false, 'Rate limit exceeded');
             SecurityService::logSecurityEvent('login_blocked_rate_limit', null, $ip, "Target email: {$email}");
             return [
                 'success' => false,
-                'error'   => 'Too many failed login attempts. For security reasons, please try again in 15 minutes.'
+                'error'   => "Too many failed login attempts. For security reasons, please try again in {$decayMinutes} minute(s)."
             ];
         }
 

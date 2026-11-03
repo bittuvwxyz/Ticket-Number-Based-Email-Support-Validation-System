@@ -29,6 +29,10 @@ return [
         'httponly' => true,
         'samesite' => 'Lax',
     ],
+    'auth'     => [
+        'rate_limit_attempts'      => (int)($_ENV['AUTH_RATE_LIMIT_ATTEMPTS'] ?? 5),
+        'rate_limit_decay_minutes' => (int)($_ENV['AUTH_RATE_LIMIT_DECAY_MINUTES'] ?? 1),
+    ],
     'ticket'   => [
         'prefix'               => $_ENV['TICKET_PREFIX'] ?? 'REQ',
         'allow_closed_replies' => filter_var($_ENV['TICKET_ALLOW_CLOSED_REPLIES'] ?? false, FILTER_VALIDATE_BOOLEAN),

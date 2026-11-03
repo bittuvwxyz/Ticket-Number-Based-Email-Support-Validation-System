@@ -83,8 +83,11 @@ class SecurityService
     /**
      * Checks if IP address is currently rate-limited (brute-force defense).
      */
-    public static function isIpRateLimited(string $ip, int $maxAttempts = 5, int $decayMinutes = 15): bool
+    public static function isIpRateLimited(string $ip, ?int $maxAttempts = null, ?int $decayMinutes = null): bool
     {
+        $maxAttempts = $maxAttempts ?? (int)config('app.auth.rate_limit_attempts', 5);
+        $decayMinutes = $decayMinutes ?? (int)config('app.auth.rate_limit_decay_minutes', 1);
+
         $since = date('Y-m-d H:i:s', time() - ($decayMinutes * 60));
         $sql = "SELECT COUNT(*) AS failed_count 
                 FROM `login_logs` 
@@ -101,8 +104,11 @@ class SecurityService
     /**
      * Checks if a target email address is currently rate-limited.
      */
-    public static function isEmailRateLimited(string $email, int $maxAttempts = 5, int $decayMinutes = 15): bool
+    public static function isEmailRateLimited(string $email, ?int $maxAttempts = null, ?int $decayMinutes = null): bool
     {
+        $maxAttempts = $maxAttempts ?? (int)config('app.auth.rate_limit_attempts', 5);
+        $decayMinutes = $decayMinutes ?? (int)config('app.auth.rate_limit_decay_minutes', 1);
+
         $since = date('Y-m-d H:i:s', time() - ($decayMinutes * 60));
         $sql = "SELECT COUNT(*) AS failed_count 
                 FROM `login_logs` 
